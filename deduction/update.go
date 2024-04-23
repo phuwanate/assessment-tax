@@ -25,7 +25,6 @@ func UpdatePersonalDeduction(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, Err{Message: err.Error()})
 	}
 
-	// Extract the amount from the RequestBody struct
 	if (reqBody.Amount > 100000) {
 		res = 100000
 	} else if (reqBody.Amount < 10000) {
