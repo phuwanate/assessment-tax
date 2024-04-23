@@ -62,7 +62,8 @@ func CalculateTax(c echo.Context) error {
 	if req.Allowances[0].Amount > 100000 {
 		req.Allowances[0].Amount = 100000
 	}
-
+	
+	//Before tax levels
 	taxableIncome := req.TotalIncome - personalDeduction - req.Allowances[0].Amount
 
 	// Define tax levels
