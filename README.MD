@@ -25,7 +25,7 @@ $> go run main.go
 2. Select Form
 3. Use "taxFile" as the field name and select "taxes.csv" from this repository as the CSV file.
 ```
-### Upload with Command line
+## Upload with Command line
 ```
 $> curl -X POST -F "taxFile=@/path/to/taxes.csv" http://localhost:8080/tax/calculations/upload-csv
 ```
