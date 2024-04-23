@@ -1,9 +1,12 @@
 package deduction
 
 import (
+	_ "database/sql"
 	"log"
-	"github.com/phuwanate/assessment-tax/db"
+
 	_ "github.com/lib/pq"
+	"github.com/phuwanate/assessment-tax/db"
+
 )
 
 type Err struct {
@@ -11,13 +14,13 @@ type Err struct {
 }
 
 func InitDeduction() {
-	db := database.DB
 	var err error
-	createTb := `CREATE TABLE IF NOT EXISTS allowance ( id SERIAL PRIMARY KEY, personalDeduction INT);`
+	db := database.DB
+	createTb := `CREATE TABLE IF NOT EXISTS allowance ( id SERIAL PRIMARY KEY, personalDeduction FLOAT, kReceipt FLOAT);`
 	_, err = db.Exec(createTb)
 	if err != nil {
 		log.Fatal("can't create table", err)
 	}
 
-	db.QueryRow("INSERT INTO  allowance (personalDeduction) values ($1)  RETURNING id", 60000)
+	db.QueryRow("INSERT INTO allowance (personalDeduction, kReceipt) values ($1, $2) RETURNING id", 60000, 50000)
 }

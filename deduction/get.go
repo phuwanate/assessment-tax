@@ -15,3 +15,12 @@ func GetPersonalAllowance(db *sql.DB) (float64, error) {
 	}
 	return personalDeduction, nil
 }
+
+func GetKReceipt(db *sql.DB) (float64, error) {
+	var kReceipt float64
+	err := db.QueryRow("SELECT kReceipt FROM allowance WHERE id = $1", 1).Scan(&kReceipt)
+	if err != nil {
+		return 0, fmt.Errorf("failed to query kReceipt maximum: %v", err)
+	}
+	return kReceipt, nil
+}

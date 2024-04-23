@@ -72,6 +72,8 @@ func CalculateTaxAmount(totalIncome, wht, personalAllowance float64, allowances 
 	return taxAmount, taxLevels
 }
 
+
+
 func CalculateTaxAmountForCSV(totalIncome, wht, donation float64) float64 {
 	var taxAmount float64
 	var taxLevels []TaxLevel
