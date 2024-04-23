@@ -2,9 +2,6 @@ package deduction
 
 import (
 	"log"
-	_ "net/http"
-	_ "strconv"
-	_ "github.com/labstack/echo/v4"
 	"github.com/phuwanate/assessment-tax/db"
 	_ "github.com/lib/pq"
 )

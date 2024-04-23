@@ -19,6 +19,45 @@ import (
 	_ "github.com/lib/pq"
 )
 
+func calculateTax(c echo.Context) error {
+	req := new(utils.TaxRequest)
+	if err := c.Bind(req); err != nil {
+		return err
+	}
+
+	// Query personal allowance from database
+	personalAllowance, err := deduction.GetPersonalAllowance(database.DB)
+	if err != nil {
+		return err
+	}
+
+	//Specific limits based on allowance type
+	for i := range req.Allowances {
+		switch req.Allowances[i].AllowanceType {
+		case "donation":
+			// Limit donation allowance to maximum of 100,000
+			if req.Allowances[i].Amount > 100000 {
+				req.Allowances[i].Amount = 100000
+			}
+		default:
+		}
+	}
+
+	// Calculate tax levels and total tax
+	taxAmount, taxLevels := utils.CalculateTaxAmount(req.TotalIncome, req.WHT, personalAllowance, req.Allowances)
+	if taxAmount < 0 {
+		taxAmount = 0
+	}
+
+	// Prepare response
+	res := utils.TaxResponse{
+		Tax:      taxAmount,
+		TaxLevel: taxLevels,
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
 func main() {
 	if err := database.InitDB(); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
@@ -32,7 +71,7 @@ func main() {
 	e.Use(middleware.Recover())
 
 	// Routes
-	e.POST("/tax/calculations", utils.CalculateTax)
+	e.POST("/tax/calculations", calculateTax)
 
 	// Start server
 	port := os.Getenv("PORT")
