@@ -10,8 +10,8 @@ export ADMIN_PASSWORD=admin!
 # How to Start the Program
 
 ```
-docker compose down
-sudo docker compose up
+$> docker compose down
+$> sudo docker compose up
 ```
 
 ```
@@ -19,5 +19,5 @@ prepare all environments
 ```
 
 ```
-go run main.go
+$> go run main.go
 ```
