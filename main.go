@@ -10,14 +10,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/phuwanate/assessment-tax/db"
 	"github.com/phuwanate/assessment-tax/csv"
-	"github.com/phuwanate/assessment-tax/utils"
+	"github.com/phuwanate/assessment-tax/db"
 	"github.com/phuwanate/assessment-tax/deduction"
+	"github.com/phuwanate/assessment-tax/utils"
 
-	_ "github.com/lib/pq"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	_ "github.com/lib/pq"
 )
 
 func calculateTax(c echo.Context) error {
@@ -31,17 +31,21 @@ func calculateTax(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	maxKReceipt, err := deduction.GetKReceipt(database.DB)
+	if err != nil {
+		return err
+	}
 
 	//Specific limits based on allowance type
 	for i := range req.Allowances {
 		switch req.Allowances[i].AllowanceType {
 		case "k-receipt":
-			// Limit k-receipt deduction to 50,000
-			if req.Allowances[i].Amount > 50000 {
-				req.Allowances[i].Amount = 50000
+			// Limit k-receipt allowance to maximum of 50,000
+			if req.Allowances[i].Amount >  maxKReceipt{
+				req.Allowances[i].Amount = maxKReceipt
 			}
 		case "donation":
-			// Limit donation to 100,000
+			// Limit donation allowance to maximum of 100,000
 			if req.Allowances[i].Amount > 100000 {
 				req.Allowances[i].Amount = 100000
 			}
@@ -98,6 +102,7 @@ func main() {
 	adminGroup := e.Group("/admin")
 	adminGroup.Use(middleware.BasicAuth(AuthValidator))
 	adminGroup.POST("/deductions/personal", deduction.UpdatePersonalDeduction)
+	adminGroup.POST("/deductions/k-receipt", deduction.UpdateMaximumKReceipt)
 
 	// Start server
 	port := os.Getenv("PORT")
