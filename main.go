@@ -10,13 +10,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/phuwanate/assessment-tax/deduction"
 	"github.com/phuwanate/assessment-tax/db"
+	"github.com/phuwanate/assessment-tax/csv"
 	"github.com/phuwanate/assessment-tax/utils"
+	"github.com/phuwanate/assessment-tax/deduction"
 
+	_ "github.com/lib/pq"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	_ "github.com/lib/pq"
 )
 
 func calculateTax(c echo.Context) error {
@@ -75,6 +76,7 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	deduction.InitDeduction()
+	csv.InitCSVTable()
 
 	e := echo.New()
 
@@ -84,6 +86,7 @@ func main() {
 
 	// User Routes
 	e.POST("/tax/calculations", calculateTax)
+	e.POST("/tax/calculations/upload-csv", csv.CalculateTaxFromCSV)
 
 	//Admin Routes
 	adminGroup := e.Group("/admin")
