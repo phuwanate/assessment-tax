@@ -1,13 +1,9 @@
 package utils
 
 import (
-	"log"
-	"net/http"
-
-	"github.com/phuwanate/assessment-tax/db"
-
-	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
+	_ "github.com/phuwanate/assessment-tax/deduction"
+	_ "github.com/phuwanate/assessment-tax/db"
 )
 
 type Allowance struct {
@@ -21,83 +17,55 @@ type TaxRequest struct {
 	Allowances  []Allowance `json:"allowances"`
 }
 
-type TaxResponse struct {
-	Tax float64 `json:"tax"`
-}
-
-type RefundResponse struct {
-	Refund float64 `json:"refund"`
-}
-
 type TaxLevel struct {
-	Tax float64 `json:"tax"`
+	Level string  `json:"level"`
+	Tax   float64 `json:"tax"`
 }
 
-func CalculateTax(c echo.Context) error {
-	db := database.DB
-	req := new(TaxRequest)
-	if err := c.Bind(req); err != nil {
-		return err
-	}
+type TaxResponse struct {
+	Tax      float64    `json:"tax"`
+	TaxLevel []TaxLevel `json:"taxLevel"`
+}
 
-	stmt, err := db.Prepare("SELECT personalDeduction FROM allowance where id=$1")
-	if err != nil {
-		log.Fatal("can't prepare query one row statment", err)
-	}
-
-	rowId := 1
-	row := stmt.QueryRow(rowId)
-	var personalDeduction float64
-
-	err = row.Scan(&personalDeduction)
-	if err != nil {
-		log.Fatal("can't Scan row into variables", err)
-	}
-
-	// Calculate taxable income
+func CalculateTaxAmount(totalIncome, wht, personalAllowance float64, allowances []Allowance) (float64, []TaxLevel) {
 	var taxAmount float64
 	var taxLevels []TaxLevel
 	var level1Tax, level2Tax, level3Tax, level4Tax float64
 
-	if req.Allowances[0].Amount > 100000 {
-		req.Allowances[0].Amount = 100000
+	// Calculate total amount of allowances
+	var totalAllowanceAmount float64
+	for _, a := range allowances {
+		totalAllowanceAmount += a.Amount
 	}
-	
-	//Before tax levels
-	taxableIncome := req.TotalIncome - personalDeduction - req.Allowances[0].Amount
+
+	taxableIncome := (totalIncome - personalAllowance) - totalAllowanceAmount
 
 	// Define tax levels
-	taxLevels = append(taxLevels, TaxLevel{Tax: 0.0})
+	taxLevels = append(taxLevels, TaxLevel{Level: "0-150,000", Tax: 0.0})
 	if taxableIncome > 150000 {
 		level1Tax = (min(taxableIncome, 500000) - 150000) * 0.10
 	}
-	taxLevels = append(taxLevels, TaxLevel{Tax: level1Tax})
+	taxLevels = append(taxLevels, TaxLevel{Level: "150,001-500,000", Tax: level1Tax})
 	if taxableIncome > 500000 {
 		level2Tax = (min(taxableIncome, 1000000) - 500000) * 0.15
 	}
-	taxLevels = append(taxLevels, TaxLevel{Tax: level2Tax})
+	taxLevels = append(taxLevels, TaxLevel{Level: "500,001-1,000,000", Tax: level2Tax})
 	if taxableIncome > 1000000 {
 		level3Tax = (min(taxableIncome, 2000000) - 1000000) * 0.20
 	}
-	taxLevels = append(taxLevels, TaxLevel{Tax: level3Tax})
+	taxLevels = append(taxLevels, TaxLevel{Level: "1,000,001-2,000,000", Tax: level3Tax})
 	if taxableIncome > 2000000 {
 		level4Tax = (taxableIncome - 2000000) * 0.35
 	}
-	taxLevels = append(taxLevels, TaxLevel{Tax: level4Tax})
+	taxLevels = append(taxLevels, TaxLevel{Level: "2,000,001 ขึ้นไป", Tax: level4Tax})
 
 	// Calculate total tax
 	for _, level := range taxLevels {
 		taxAmount += level.Tax
 	}
 
-	taxAmount -= req.WHT
-	if taxAmount < 0 {
-		return c.JSON(http.StatusOK, RefundResponse{
-			Refund: -taxAmount,
-		})
-	} else {
-		return c.JSON(http.StatusOK, TaxResponse{
-			Tax: taxAmount,
-		})
-	}
+	// Subtract WHT
+	taxAmount -= wht
+
+	return taxAmount, taxLevels
 }
