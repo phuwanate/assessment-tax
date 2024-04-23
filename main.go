@@ -35,12 +35,18 @@ func calculateTax(c echo.Context) error {
 	//Specific limits based on allowance type
 	for i := range req.Allowances {
 		switch req.Allowances[i].AllowanceType {
+		case "k-receipt":
+			// Limit k-receipt deduction to 50,000
+			if req.Allowances[i].Amount > 50000 {
+				req.Allowances[i].Amount = 50000
+			}
 		case "donation":
-			// Limit donation allowance to maximum of 100,000
+			// Limit donation to 100,000
 			if req.Allowances[i].Amount > 100000 {
 				req.Allowances[i].Amount = 100000
 			}
 		default:
+			
 		}
 	}
 
