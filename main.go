@@ -58,6 +58,18 @@ func calculateTax(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+func AuthValidator(username, password string, c echo.Context) (bool, error) {
+	expectedUsername := os.Getenv("ADMIN_USERNAME")
+	expectedPassword := os.Getenv("ADMIN_PASSWORD")
+
+	// Validate the provided username and password against environment variables
+	if username == expectedUsername && password == expectedPassword {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 func main() {
 	if err := database.InitDB(); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
@@ -70,8 +82,13 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	// Routes
+	// User Routes
 	e.POST("/tax/calculations", calculateTax)
+
+	//Admin Routes
+	adminGroup := e.Group("/admin")
+	adminGroup.Use(middleware.BasicAuth(AuthValidator))
+	adminGroup.POST("/deductions/personal", deduction.UpdatePersonalDeduction)
 
 	// Start server
 	port := os.Getenv("PORT")
