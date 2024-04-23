@@ -23,7 +23,7 @@ $> go run main.go
 ```
 1. Go to Body
 2. Select Form
-3. Use "taxFile" as the field name and select "taxes.csv" from this repository as the CSV file.
+3. Use "taxFile" as the field name and choose file "taxes.csv" from this repository as the CSV file.
 ```
 ## Upload with Command line
 ```
